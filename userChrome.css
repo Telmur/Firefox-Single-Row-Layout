@@ -1,0 +1,133 @@
+/* =====================================================================
+   Firefox Single-Row Layout — address bar and tabs on one line
+   ---------------------------------------------------------------------
+   Based on:   va9iff/firefox-single-row-layout
+               https://github.com/va9iff/firefox-single-row-layout
+   Reworked with the help of an AI assistant (Claude by Anthropic):
+     - density-independent row height (no hard-coded pixel lift)
+     - focus state kept in sync between nav-bar and tab strip
+     - unified toolbar button spacing
+     - shadow cleanup for a seamless single strip
+     - fixed-width nav-bar + hidden pre-tabs spacer so the gap to the
+       first tab stays constant whether maximized or windowed
+     - container tabs shown as a colored dot instead of a stripe
+   Tested on Firefox 151 (Linux); normal / compact / touch density.
+   ===================================================================== */
+
+:root {
+    /* Width of the left toolbar area = the position where the tab strip begins.
+     * This is the MAIN dial for splitting toolbar <-> tabs:
+     *   larger  -> more room for the address bar + buttons, fewer for tabs
+     *   smaller -> address bar/buttons move together, tabs start further left */
+    --uc-navbar-width: 500px;
+
+    /* Same as above, but while the address bar is focused (suggestions open).
+     *   same value as above -> the bar does NOT jump when you click into it
+     *   larger              -> the address bar grows while typing and pushes
+     *                          the tabs to the right */
+    --uc-navbar-width-focused: 500px;
+
+    /* Gap between the last nav-bar button (hamburger menu) and the first tab. */
+    --uc-navbar-gap: 12px;
+
+    /* Spacing between the individual toolbar buttons
+     * (back/forward/reload on the left and the icons on the right). */
+    --uc-btn-gap: 3px;
+
+    /* THE single dial for the height: density-aware.
+     *   --tab-min-height is set by Firefox per UI density automatically
+     *   (compact / normal / touch). --tab-block-margin is the "floating"
+     *   gap above/below the tabs.
+     *   If one density looks slightly off: adjust ONLY this value. */
+    --uc-line-height: calc(var(--tab-min-height) + 2 * var(--tab-block-margin, 4px));
+}
+
+/* Pull the nav-bar up into the tab row and pin it to a fixed width on the left.
+ * Fixed width instead of "100vw - x", so the position does NOT depend on the
+ * window width (otherwise the hamburger drifts in windowed mode). */
+#nav-bar {
+    height: var(--uc-line-height) !important;
+    min-height: 0 !important;
+    margin-top: calc(-1 * var(--uc-line-height)) !important;
+    width: var(--uc-navbar-width) !important;
+    max-width: var(--uc-navbar-width) !important;
+    margin-inline-start: 0 !important;
+    margin-inline-end: auto !important;   /* keep it left-aligned */
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* When the address bar is focused, switch to the (optionally wider) focus width. */
+:root:has(#urlbar[open]) #nav-bar {
+    width: var(--uc-navbar-width-focused) !important;
+    max-width: var(--uc-navbar-width-focused) !important;
+}
+
+/* Let the address bar fill the free space of the nav-bar, so the right-hand
+ * buttons (incl. the hamburger menu) sit flush at the tab edge instead of
+ * leaving a gap. (A fixed max-width here was the cause of that gap.) */
+#urlbar-container {
+    flex: 1 1 auto !important;
+    max-width: none !important;
+}
+
+/* Reserve space on the left of the tab strip for the nav-bar. */
+#TabsToolbar {
+    padding-inline-start: calc(var(--uc-navbar-width) + var(--uc-navbar-gap)) !important;
+}
+:root:has(#urlbar[open]) #TabsToolbar {
+    padding-inline-start: calc(var(--uc-navbar-width-focused) + var(--uc-navbar-gap)) !important;
+}
+
+/* Disable the sizemode-dependent spacer in front of the tabs.
+ * Its changing width (maximized vs. windowed) was the reason the gap between
+ * the hamburger menu and the first tab differed by window state. Now only
+ * your padding-inline-start counts. */
+.titlebar-spacer[type="pre-tabs"] {
+    display: none !important;
+}
+
+/* Uniform spacing for all nav-bar buttons. */
+#nav-bar .toolbarbutton-1 {
+    margin-inline: var(--uc-btn-gap) !important;
+}
+
+/* Smooth color transitions (works nicely together with Adaptive Tab Bar Colour). */
+#navigator-toolbox, #TabsToolbar, #nav-bar, .tab-background, .urlbar-background {
+    transition: background-color 0.4s ease, border-color 0.4s ease !important;
+}
+
+/* Shadow cast upward by the page content onto the toolbar. */
+#tabbrowser-tabbox,
+.browserContainer {
+    box-shadow: none !important;
+}
+
+/* Shadow beneath the whole toolbox (behind tabs + nav-bar). */
+#navigator-toolbox {
+    box-shadow: none !important;
+}
+
+/* Shadow directly around the (active) tabs. */
+.tab-background {
+    box-shadow: none !important;
+}
+
+/* --- Container tabs: replace the color stripe with a dot before the favicon --- */
+
+/* 1. Hide the native container color stripe. */
+.tabbrowser-tab[usercontextid] .tab-context-line {
+    display: none !important;
+}
+
+/* 2. Colored dot before the favicon — container tabs only. */
+.tabbrowser-tab[usercontextid] .tab-content::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin-inline-end: 5px;
+    border-radius: 50%;
+    align-self: center;
+    background-color: var(--identity-icon-color, var(--identity-tab-color, currentColor));
+}
