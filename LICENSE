@@ -1,6 +1,11 @@
 MIT License
 
-Copyright (c) 2026 Leon Bauer
+Copyright (c) 2026 Telmur
+
+This license applies to the modifications in this repository. The upstream
+base, va9iff/firefox-single-row-layout, is used with the author's permission
+(https://github.com/va9iff/firefox-single-row-layout/issues/3#issuecomment-4699071580)
+and remains under its author's rights; this license does not relicense it.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
